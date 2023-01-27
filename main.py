@@ -26,11 +26,14 @@ $user_input
 
 generate_overpass_query_promt = string.Template(
 """
-Generate an Overpass API query that will download all $geospatial_feature inside the bbox. 
+Generate an Overpass API query that will download all $geospatial_feature inside the bbox.
 $geospatial_feature can be $osm_types.
 Make sure bbox is lowercased and do not surround it with {{}}
 """
 )
+
+def get_utc_iso_time():
+    return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 # https://stackoverflow.com/a/23794010
 def open_mkdir_p(path, mode = 'r'):
@@ -38,7 +41,7 @@ def open_mkdir_p(path, mode = 'r'):
     return open(path, mode)
 
 def log_attempt(user_input_completion_prompt="", user_input_tokens={},
-                nominatim_response="", overpass_response="", success=True):
+                nominatim_response="", overpass_response="", success=True, iso_timestamp=get_utc_iso_time()):
     log_file = os.path.join('telemetry', 'success' if success else 'failure', f"{get_utc_iso_time()}.json")
     with open_mkdir_p(log_file, 'w+') as f:
         f.write(json.dumps({
@@ -52,9 +55,6 @@ def write_output(output_data, output_file):
     with open_mkdir_p(output_file, 'w+') as f:
         f.write(output_data)
         f.close()
-
-def get_utc_iso_time():
-    return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 def get_overpass_data(user_input):
     iso_timestamp = get_utc_iso_time()
@@ -90,9 +90,9 @@ def get_overpass_data(user_input):
             'place': user_input_tokens['place'].title()
         })
     )
-    
+
     nominatim_data = requests.get(f"{NOMINATIM}?q={user_input_tokens['place']}&polygon_geojson=1&format=jsonv2")
-    
+
     if nominatim_data.status_code != 200:
         print(f"Nominatim does not know about the place {user_input_tokens['place']}")
         log_attempt(user_input_completion_prompt=user_input_completion_prompt, user_input_tokens=user_input_tokens, \
@@ -108,7 +108,7 @@ def get_overpass_data(user_input):
 
 
     folder_name = f"{user_input_tokens['place']}_{user_input_tokens['geospatial_feature']}_{'|'.join(user_input_tokens['osm_types'])}_{get_utc_iso_time()}"
-    
+
     query_file_name = os.path.join('results', folder_name, f"{folder_name}.overpass.query")
     write_output(overpass_query, query_file_name)
 
@@ -125,5 +125,4 @@ def get_overpass_data(user_input):
     log_attempt(user_input_completion_prompt=user_input_completion_prompt, user_input_tokens=user_input_tokens, \
                 nominatim_response=nominatim_data.text, overpass_response=overpass_data.text, iso_timestamp=iso_timestamp)
 
-get_overpass_data(input("Ask for data and you will recieve: "))
-    
+get_overpass_data(input("Ask for data and you will receive: "))
