@@ -57,6 +57,7 @@ def get_utc_iso_time():
     return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 def get_overpass_data(user_input):
+    iso_timestamp = get_utc_iso_time()
     user_input_completion_prompt = user_input_prompt.substitute({'user_input': user_input})
     user_input_completion = openai.Completion.create(
         engine="text-davinci-003",
@@ -75,7 +76,8 @@ def get_overpass_data(user_input):
     if not all(token in user_input_tokens for token in REQUIRED_TOKENS) or \
            any(token_value is None for token_value in user_input_tokens.values()):
         print('could not quite figure out what features you wanted, as again.')
-        log_attempt(user_input_completion_prompt=user_input_completion_prompt, user_input_tokens=user_input_tokens, success=False)
+        log_attempt(user_input_completion_prompt=user_input_completion_prompt, user_input_tokens=user_input_tokens, \
+                    success=False, iso_timestamp=iso_timestamp)
         return
 
     overpass_query_completion = openai.Completion.create(
@@ -94,7 +96,7 @@ def get_overpass_data(user_input):
     if nominatim_data.status_code != 200:
         print(f"Nominatim does not know about the place {user_input_tokens['place']}")
         log_attempt(user_input_completion_prompt=user_input_completion_prompt, user_input_tokens=user_input_tokens, \
-                    nominatim_response=nominatim_data.text, success=False)
+                    nominatim_response=nominatim_data.text, success=False, iso_timestamp=iso_timestamp)
         return
 
     place_data = nominatim_data.json()
@@ -104,23 +106,24 @@ def get_overpass_data(user_input):
     overpass_query = overpass_query_completion.choices[0].text.replace('```','').replace('bbox', place_overpass_bounds)
     overpass_data = requests.post(OVERPASS, data={'data': overpass_query})
 
+
     folder_name = f"{user_input_tokens['place']}_{user_input_tokens['geospatial_feature']}_{'|'.join(user_input_tokens['osm_types'])}_{get_utc_iso_time()}"
     
-    query_file_name = os.path.join('results', folder_name, "overpass.query")
+    query_file_name = os.path.join('results', folder_name, f"{folder_name}.overpass.query")
     write_output(overpass_query, query_file_name)
 
     if overpass_data.status_code != 200:
         print(f"Overpass could not quite understand the query that built. We wrote it to {query_file_name} where you can have a look yourself.")
         log_attempt(user_input_completion_prompt=user_input_completion_prompt, user_input_tokens=user_input_tokens, \
-            nominatim_response=nominatim_data.text, overpass_response=overpass_data.text, success=False)
+            nominatim_response=nominatim_data.text, overpass_response=overpass_data.text, success=False, iso_timestamp=iso_timestamp)
         return
 
-    data_file_name = os.path.join('results', folder_name, "overpass.geojson")
+    data_file_name = os.path.join('results', folder_name, f"{folder_name}.overpass.geojson")
     overpass_geojson = osm2geojson.json2geojson(overpass_data.text)
     write_output(json.dumps(overpass_geojson), data_file_name)
 
     log_attempt(user_input_completion_prompt=user_input_completion_prompt, user_input_tokens=user_input_tokens, \
-                nominatim_response=nominatim_data.text, overpass_response=overpass_data.text)
+                nominatim_response=nominatim_data.text, overpass_response=overpass_data.text, iso_timestamp=iso_timestamp)
 
 get_overpass_data(input("Ask for data and you will recieve: "))
     
