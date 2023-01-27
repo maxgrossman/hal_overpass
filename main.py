@@ -17,8 +17,8 @@ user_input_prompt = string.Template(
 """
 Label the geospatial feature, place, and osm types in the following sentence.
 Return it in json format, make keys snake case, and return the osm types in a list.
-Remeber, osm types include nodes, ways, and relations.
-One more thing, geospatial features are points of interests, transportation feautures, or natural features.
+Remember, osm types include nodes, ways, and relations.
+One more thing, geospatial features are points of interests, transportation features, or natural features.
 
 $user_input
 """
