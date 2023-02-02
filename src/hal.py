@@ -17,8 +17,8 @@ user_input_prompt = string.Template(
 """
 Label the geospatial feature, place, and osm types in the following sentence.
 Return it in json format, make keys snake case, and return the osm types in a list.
-Remeber, osm types include nodes, ways, and relations.
-One more thing, geospatial features are points of interests, transportation feautures, or natural features.
+Remember, osm types include nodes, ways, and relations.
+One more thing, geospatial features are points of interests, transportation features, or natural features.
 
 $user_input
 """
@@ -26,7 +26,7 @@ $user_input
 
 generate_overpass_query_promt = string.Template(
 """
-Generate an Overpass API query that will download all $geospatial_feature inside the bbox. 
+Generate an Overpass API query that will download all $geospatial_feature inside the bbox.
 $geospatial_feature can be $osm_types.
 Make sure bbox is lowercased and do not surround it with {{}}
 """
@@ -91,7 +91,7 @@ def get_overpass_data(user_input):
             'place': user_input_tokens['place'].title()
         })
     )
-    
+
     nominatim_data = requests.get(f"{NOMINATIM}?q={user_input_tokens['place']}&polygon_geojson=1&format=jsonv2")
 
     place_data = nominatim_data.json()
@@ -100,8 +100,9 @@ def get_overpass_data(user_input):
         print(f"Nominatim does not know about the place {user_input_tokens['place']}")
         log_attempt(user_input_completion_prompt=user_input_completion_prompt, user_input_tokens=user_input_tokens, \
                     nominatim_response=nominatim_data.text, success=False, iso_timestamp=iso_timestamp)
-        return overpass_result
+        return
 
+    place_data = nominatim_data.json()
     place_bounds = place_data[0]['boundingbox']
     place_overpass_bounds = f'{place_bounds[0]},{place_bounds[2]},{place_bounds[1]},{place_bounds[3]}'
 
@@ -110,7 +111,7 @@ def get_overpass_data(user_input):
 
 
     folder_name = f"{user_input_tokens['place']}_{user_input_tokens['geospatial_feature']}_{'|'.join(user_input_tokens['osm_types'])}_{get_utc_iso_time()}"
-    
+
     query_file_name = os.path.join('results', folder_name, f"{folder_name}.overpass.query")
     write_output(overpass_query, query_file_name)
 
@@ -135,5 +136,5 @@ def get_overpass_data(user_input):
 
 
 if __name__ == '__main__':
-    get_overpass_data(input("Ask for data and you will recieve: "))
-    
+    get_overpass_data(input("Ask for data and you will receive: "))
+
