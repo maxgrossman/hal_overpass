@@ -1,0 +1,37 @@
+version: "3.7"
+services:
+  cli:
+    entrypoint: /docker-cli-entrypoint.sh
+    image: hal
+    env_file:
+      - hal.env
+    init: true
+    volumes:
+      - ./src:${HAL_DIR}/src:ro
+      - ./results:${HAL_DIR}/results:rw
+      - ./venv:${HAL_DIR}/venv:rw
+      - ./telemetry:${HAL_DIR}/telemetry:rw
+      - ./cache.json:${HAL_DIR}/cache.json:rw
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        hal_dir: ${HAL_DIR}
+        hal_gid: ${HAL_GID}
+        hal_group: ${HAL_GROUP}
+        hal_uid: ${HAL_UID}
+        hal_user: ${HAL_USER}
+    init: true
+    env_file:
+      - hal.env
+    ports:
+      - "${HAL_PORT}:${HAL_PORT}"
+    image: hal
+    volumes:
+      - ./src:${HAL_DIR}/src:ro
+      - ./requirements:${HAL_DIR}/requirements:ro
+      - ./results:${HAL_DIR}/results:rw
+      - ./venv:${HAL_DIR}/venv:rw
+      - ./telemetry:${HAL_DIR}/telemetry:rw
+      - ./cache.json:${HAL_DIR}/cache.json:rw
