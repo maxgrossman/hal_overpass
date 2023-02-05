@@ -1,10 +1,5 @@
 USER_ID := $(shell id -u)
 GROUP_ID := ${shell id -g}
-COMPOSE_COMMAND = docker-compose
-ifeq (, $(shell which docker-compose))
-COMPOSE_COMMAND = docker compose
-endif
-
 
 .env:
 	cp .env.example .env
@@ -16,10 +11,10 @@ hal.env:
 	cp hal.env.example hal.env
 
 build: .env
-	DOCKER_BUILDKIT=1 $(COMPOSE_COMMAND) build
+	DOCKER_BUILDKIT=1 docker compose build
 
 up: .env
-	DOCKER_BUILDKIT=1 $(COMPOSE_COMMAND) up -d api
+	DOCKER_BUILDKIT=1 docker compose up -d api
 
 down:
-	DOCKER_BUILDKIT=1 $(COMPOSE_COMMAND) down
+	DOCKER_BUILDKIT=1 docker compose down
