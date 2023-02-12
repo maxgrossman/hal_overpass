@@ -2,7 +2,6 @@ import openai
 import json
 import string
 import requests
-import urllib.parse
 import os
 import datetime
 import osm2geojson
